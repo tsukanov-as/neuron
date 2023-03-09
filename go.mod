@@ -1,3 +1,3 @@
-module github.com/tsukanov-as/kfc
+module github.com/tsukanov-as/neuron
 
 go 1.19

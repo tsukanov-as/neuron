@@ -1,4 +1,4 @@
-package kfc
+package neuron
 
 import "errors"
 
