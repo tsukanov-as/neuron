@@ -1,7 +1,7 @@
-# kfc
-kids fast classifier; pass by, these are experiments
+# neuron
+neuron model
 
 ```sh
-$ git clone https://github.com/tsukanov-as/kfc.git && cd kfc
+$ git clone https://github.com/tsukanov-as/neuron.git && cd neuron
 $ go test -v ./...
 ```
