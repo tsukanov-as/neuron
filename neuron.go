@@ -40,6 +40,7 @@ func (c *Classifier) Learn(class int, fv []float64) error {
 	return nil
 }
 
+// analogue of naive Bayes classifier
 func (c *Classifier) Predict(fv []float64) ([]float64, error) {
 	p := make([]float64, c.cc)
 	for ci := 0; ci < c.cc; ci++ { // for each class
