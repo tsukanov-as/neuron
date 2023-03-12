@@ -35,5 +35,5 @@
 
 ```sh
 $ git clone https://github.com/tsukanov-as/neuron.git && cd neuron
-$ go test -v ./...
+$ go test -v -count=1 ./...
 ```
