@@ -58,4 +58,7 @@ func TestStudent(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(argmax(p), p)
+
+	// fmt.Println(c.ClassProbs(1))
+	// fmt.Println(c.FeatureProbs(2))
 }
