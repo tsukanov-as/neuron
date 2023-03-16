@@ -10,10 +10,9 @@ import (
 type Type int
 
 const (
-	OR   Type = 0
-	XOR  Type = 1
-	AND  Type = 2
-	XNOR Type = -1
+	OR  Type = 0
+	XOR Type = 1
+	AND Type = 2
 )
 
 const CassetteSize = 10
@@ -66,7 +65,7 @@ func (n *Neuron) Tick() {
 		if sum > 0 {
 			n.Stress++
 		}
-	case XOR, XNOR:
+	case XOR:
 		if sum == 1 {
 			n.Stress++
 		}

@@ -1,6 +1,8 @@
 package neuron
 
-import "errors"
+import (
+	"errors"
+)
 
 type Classifier struct {
 	cc int       // classes count
@@ -82,12 +84,15 @@ func (c *Classifier) Detect(fv []float64) ([]float64, error) {
 			if fv[fi] < 0 || fv[fi] > 1 {
 				return nil, errors.New("feature value must be in range 0..1")
 			}
-			fp := 0.0
-			if c.ft[fi] > 0 {
-				fp = (cf[fi] / c.ft[fi])
+			if c.ft[fi] == 0 {
+				continue
 			}
-			fp = xnor(fp, fv[fi]) // compare
-			cp = and(cp, fp)      // all must match
+			fp := (cf[fi] / c.ft[fi])
+			if fp == 0 {
+				continue
+			}
+			fp = fp * fv[fi] // feature value limited by range 0 <= v <= 1, so we just reduce the probability proportionally
+			cp = and(cp, fp) // all must match
 		}
 		p[ci] = cp
 	}
