@@ -96,25 +96,9 @@ func Mnist3Layers() {
 	// Один просмотр тренировочной выборки.
 
 	for _, r := range train {
-		vec := r[1:]
-		var farr [featuresCount]float64
-		fvec := farr[0:0]
-		for x := 0; x < 28-1; x++ {
-			for y := 0; y < 28-1; y++ {
-				var v [4]float64
-				v[0] = vec[(y+0)*28+(x+0)]
-				v[1] = vec[(y+0)*28+(x+1)]
-				v[2] = vec[(y+1)*28+(x+0)]
-				v[3] = vec[(y+1)*28+(x+1)]
-				for _, ch := range L1Chans {
-					p, err := ch.Detect(complemented(v[:]))
-					if err != nil {
-						log.Fatal(err)
-					}
-					fvec = append(fvec, p...)
-				}
-			}
-		}
+		src := r[1:]
+		var farr [featuresCount]float64 // попытка удержать вектор на стеке
+		fvec := detect(L1Chans[:], src, farr[0:0])
 		err = L2.Learn(int(r[0]), fvec)
 		if err != nil {
 			log.Fatal(err)
@@ -131,25 +115,9 @@ func Mnist3Layers() {
 	total := 0.0
 
 	for _, r := range test {
-		vec := r[1:]
-		var farr [featuresCount]float64
-		fvec := farr[0:0]
-		for x := 0; x < 28-1; x++ {
-			for y := 0; y < 28-1; y++ {
-				var v [4]float64
-				v[0] = vec[(y+0)*28+(x+0)]
-				v[1] = vec[(y+0)*28+(x+1)]
-				v[2] = vec[(y+1)*28+(x+0)]
-				v[3] = vec[(y+1)*28+(x+1)]
-				for _, ch := range L1Chans {
-					p, err := ch.Detect(complemented(v[:]))
-					if err != nil {
-						log.Fatal(err)
-					}
-					fvec = append(fvec, p...)
-				}
-			}
-		}
+		src := r[1:]
+		var farr [featuresCount]float64 // попытка удержать вектор на стеке
+		fvec := detect(L1Chans[:], src, farr[0:0])
 		p, err := L2.Predict(fvec)
 		if err != nil {
 			log.Fatal(err)
@@ -160,4 +128,25 @@ func Mnist3Layers() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+}
+
+// Цикл по всем элементам изображения 2x2 и детектирование
+func detect(L1Chans []*neuron.Classifier, src, dst []float64) []float64 {
+	for x := 0; x < 28-1; x++ {
+		for y := 0; y < 28-1; y++ {
+			var v [4]float64
+			v[0] = src[(y+0)*28+(x+0)]
+			v[1] = src[(y+0)*28+(x+1)]
+			v[2] = src[(y+1)*28+(x+0)]
+			v[3] = src[(y+1)*28+(x+1)]
+			for _, ch := range L1Chans {
+				p, err := ch.Detect(complemented(v[:]))
+				if err != nil {
+					log.Fatal(err)
+				}
+				dst = append(dst, p...)
+			}
+		}
+	}
+	return dst
 }
