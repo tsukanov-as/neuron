@@ -15,7 +15,7 @@ for i in range(1000): # подсчет вероятности срабатыва
         total_spike = 0 # сумма спайков
         total_spike += 1 if random.random() < ap else 0
         total_spike += 1 if random.random() < bp else 0
-        if total_spike > 0: # спайки пришли одновременно (функция OR)
+        if total_spike > 0: # пришел хотя бы один спайк (функция OR)
             stress += 1
 
     god_dice = random.random()
