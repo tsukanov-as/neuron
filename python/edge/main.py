@@ -1,3 +1,4 @@
+import os
 from PIL import Image, ImageDraw
 from functools import reduce
 
@@ -10,7 +11,8 @@ def AND(x, y):
 def OR(x, y):
 	return (x + y) - (x * y)
 
-image = Image.open('Lenna.jpg')
+d = os.path.abspath(os.path.dirname(__file__))
+image = Image.open(os.path.join(d, 'Lenna.jpg'))
 
 draw = ImageDraw.Draw(image)
 width = image.size[0]
