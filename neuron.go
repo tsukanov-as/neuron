@@ -13,13 +13,17 @@ type Classifier struct {
 }
 
 func New(classes, features int) *Classifier {
-	return &Classifier{
+	c := &Classifier{
 		cc: classes,
 		fc: features,
 		fs: make([]float64, classes*features),
 		ft: make([]float64, features),
 		ct: make([]float64, classes),
 	}
+	for i := range c.ct {
+		c.ct[i] = 1 // needed for Detect2
+	}
+	return c
 }
 
 func (c *Classifier) Learn(class int, fv []float64) error {
@@ -92,6 +96,32 @@ func (c *Classifier) Detect(fv []float64) ([]float64, error) {
 				continue
 			}
 			fp = fp * fv[fi] // feature value limited by range 0 <= v <= 1, so we just reduce the probability proportionally
+			cp = and(cp, fp) // all must match
+		}
+		p[ci] = cp
+	}
+	return p, nil
+}
+
+func (c *Classifier) Detect2(fv []float64) ([]float64, error) {
+	p := make([]float64, c.cc)
+	for ci := 0; ci < c.cc; ci++ { // for each class
+		base := ci * c.fc
+		cf := c.fs[base : base+c.fc] // slice feature statistics by class
+		cp := 1.0                    // calculated class probability
+		fc := len(fv)
+		if fc > c.fc {
+			fc = c.fc
+		}
+		for fi := 0; fi < fc; fi++ { // for each feature
+			if fv[fi] < 0 || fv[fi] > 1 {
+				return nil, errors.New("feature value must be in range 0..1")
+			}
+			if c.ct[ci] == 0 {
+				continue
+			}
+			fp := 1 - (cf[fi] / c.ct[ci])
+			fp = or(fp, fv[fi])
 			cp = and(cp, fp) // all must match
 		}
 		p[ci] = cp

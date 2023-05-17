@@ -10,13 +10,15 @@ import (
 // DRAFT
 
 func main() {
-	fmt.Println("2 layers:")
-	Mnist2Layers()
-	fmt.Println("3 layers:")
+	fmt.Println("2 layers (sensor -> or):")
+	Mnist2LayersOR()
+	fmt.Println("2 layers (sensor -> and):")
+	Mnist2LayersAND()
+	fmt.Println("3 layers (sensor -> fixed and -> or):")
 	Mnist3Layers()
 }
 
-func Mnist2Layers() {
+func Mnist2LayersOR() {
 	c := neuron.New(10, mnistImgLen)
 
 	// Один просмотр тренировочной выборки.
@@ -43,6 +45,44 @@ func Mnist2Layers() {
 
 	for _, r := range test {
 		p, err := c.Predict(r[1:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		if int(r[0]) == argmax(p) {
+			total += 1
+		}
+	}
+
+	fmt.Println(total / float64(len(test)))
+}
+
+func Mnist2LayersAND() {
+	c := neuron.New(10, mnistImgLen*2)
+
+	// Один просмотр тренировочной выборки.
+
+	train, err := readMnistCsv("mnist_train.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, r := range train {
+		err = c.Learn(int(r[0]), complemented(r[1:]))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Проверка на тестовой выборке.
+
+	test, err := readMnistCsv("mnist_test.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	total := 0.0
+
+	for _, r := range test {
+		p, err := c.Detect2(complemented(r[1:]))
 		if err != nil {
 			log.Fatal(err)
 		}

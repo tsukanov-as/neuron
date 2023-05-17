@@ -32,4 +32,5 @@ $ git clone https://github.com/tsukanov-as/neuron.git && cd neuron
 $ go test -v -count=1 ./... -run ^TestModel$
 $ go test -v -count=1 ./... -run ^TestAssociation$
 $ go test -v -count=1 ./... -run ^TestDetection$
+$ go test -v -count=1 ./... -run ^TestDetection2$
 ```

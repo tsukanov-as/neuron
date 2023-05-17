@@ -95,3 +95,28 @@ func TestDetection(t *testing.T) {
 	}
 	fmt.Println(argmax(p), p)
 }
+
+func TestDetection2(t *testing.T) {
+	// Адаптивный детектор
+	x := []rec{ // класс, признаки
+		{0, complemented([]float64{0, 1, 1, 0})},
+		{1, complemented([]float64{1, 0, 0, 1})},
+	}
+
+	c := New(2, 4*2)
+
+	for i := 0; i < 1000; i++ {
+		for _, r := range x {
+			err := c.Learn(r.cl, r.fv)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	p, err := c.Detect2(complemented([]float64{0, 0.1, 0.8, 0}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(argmax(p), p)
+}
