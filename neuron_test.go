@@ -105,7 +105,7 @@ func TestDetection2(t *testing.T) {
 
 	c := New(2, 4*2)
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 10000; i++ {
 		for _, r := range x {
 			err := c.Learn(r.cl, r.fv)
 			if err != nil {

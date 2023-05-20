@@ -21,7 +21,7 @@ func New(classes, features int) *Classifier {
 		ct: make([]float64, classes),
 	}
 	for i := range c.ct {
-		c.ct[i] = 1 // needed for Detect2
+		c.ct[i] = 100 // experimental magic needed for Detect2
 	}
 	return c
 }
@@ -42,6 +42,27 @@ func (c *Classifier) Learn(class int, fv []float64) error {
 		}
 		c.fs[base+fi] += fv[fi]
 		c.ft[fi] += fv[fi]
+	}
+	return nil
+}
+
+// experimental
+func (c *Classifier) Learn2(class int, cv float64, fv []float64) error {
+	if class < 0 || class >= c.cc {
+		return errors.New("unknown class")
+	}
+	c.ct[class] += cv
+	base := class * c.fc
+	fc := len(fv)
+	if fc > c.fc {
+		fc = c.fc
+	}
+	for fi := 0; fi < fc; fi++ {
+		if fv[fi] < 0 || fv[fi] > 1 {
+			return errors.New("feature value must be in range 0..1")
+		}
+		c.fs[base+fi] += fv[fi] * cv
+		c.ft[fi] += fv[fi] * cv
 	}
 	return nil
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/tsukanov-as/neuron"
 )
@@ -16,6 +18,9 @@ func main() {
 	Mnist2LayersAND()
 	fmt.Println("3 layers (sensor -> fixed and -> or):")
 	Mnist3Layers()
+	fmt.Println("3 layers (sensor -> adaptive and -> or):")
+	fmt.Printf("wait a few minutes...\n\n")
+	Mnist3Layers2()
 }
 
 func Mnist2LayersOR() {
@@ -168,6 +173,180 @@ func Mnist3Layers() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+}
+
+// experimental
+func Mnist3Layers2() {
+	const N = 10000 // размеры тренировочной и тестовой выборок
+
+	testMax := 0.0     // максимум точности в попытках на тестовой выборке
+	trainingMax := 0.0 // соответствующая точность на тренировочной выборке
+	tlim := 100        // количество попыток с разным рандомом
+
+	for t := 0; t < tlim; t++ {
+		fmt.Printf("attempt: %d\ncurrent time: %s\n", t, time.Now().String())
+
+		rand.Seed(time.Now().UnixNano())
+
+		dl := []*neuron.Classifier{
+			neuron.New(10, mnistImgLen*2),
+			neuron.New(10, mnistImgLen*2),
+			neuron.New(10, mnistImgLen*2),
+			neuron.New(10, mnistImgLen*2),
+			neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+			// neuron.New(10, mnistImgLen*2),
+		}
+
+		train, err := readMnistCsv("mnist_train.csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+		train = train[:N]
+
+		// Рандом для AND нейронов
+
+		vv := make([]float64, mnistImgLen*2)
+		for _, d := range dl {
+			for i := 0; i < 10; i++ {
+				for j := range vv {
+					vv[j] = rand.Float64()
+				}
+				err := d.Learn(i, vv)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+
+		// Проходы по AND нейронам (по сути наивная кластеризация)
+
+		st := make([]int, len(dl))
+		for i := 0; i < 200; i++ {
+			for _, r := range train {
+				fv := complemented(r[1:])
+				mx := 0.0
+				mi := 0
+				for di := range dl {
+					pz, err := dl[di].Detect2(fv)
+					if err != nil {
+						log.Fatal(err)
+					}
+					if pz[int(r[0])] > mx {
+						mx = pz[int(r[0])]
+						mi = di
+					}
+				}
+				// учим максимально отозвавшегося
+				err = dl[mi].Learn(int(r[0]), fv)
+				if err != nil {
+					log.Fatal(err)
+				}
+				st[mi]++
+			}
+		}
+		// fmt.Println(st)
+
+		// Один проход для OR нейронов
+
+		c := neuron.New(10, 10*len(dl))
+
+		for _, r := range train {
+			fv := complemented(r[1:])
+			pp := make([]float64, 0, 10*len(dl))
+			for _, d := range dl {
+				pd, err := d.Detect2(fv)
+				if err != nil {
+					log.Fatal(err)
+				}
+				pp = append(pp, pd...)
+			}
+
+			err = c.Learn(int(r[0]), pp)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		// Проверка на тестовой выборке.
+
+		test, err := readMnistCsv("mnist_test.csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		test = test[:N]
+
+		total := 0.0
+		isMax := false
+
+		for _, r := range test {
+			fv := complemented(r[1:])
+			pp := make([]float64, 0, 10*len(dl))
+			for _, d := range dl {
+				pd, err := d.Detect2(fv)
+				if err != nil {
+					log.Fatal(err)
+				}
+				pp = append(pp, pd...)
+			}
+			p, err := c.Predict(pp)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+
+		if total/float64(len(test)) > testMax {
+			testMax = total / float64(len(test))
+			isMax = true
+		}
+
+		// Проверка на тренировочной выборке.
+
+		total2 := 0.0
+
+		for _, r := range train {
+			fv := complemented(r[1:])
+			pp := make([]float64, 0, 10*len(dl))
+			for _, d := range dl {
+				pd, err := d.Detect2(fv)
+				if err != nil {
+					log.Fatal(err)
+				}
+				pp = append(pp, pd...)
+			}
+			p, err := c.Predict(pp)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total2 += 1
+			}
+		}
+
+		if isMax {
+			trainingMax = total2 / float64(len(train))
+		}
+
+		fmt.Printf("accuracy: test=%f, train=%f, total=%f\n\n", total/float64(len(test)), total2/float64(len(train)), (total+total2)/(float64(len(test))+float64(len(train))))
+	}
+	fmt.Println("max:", tlim, testMax, trainingMax)
 }
 
 // Цикл по всем элементам изображения 2x2 и детектирование
