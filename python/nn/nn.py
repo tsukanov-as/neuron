@@ -1,8 +1,26 @@
 import numpy as np
 import numpy.typing as npt
+from numba import jit, prange
 
 Float = np.float64
 Vector = npt.NDArray[Float]
+
+@jit(nopython=True, nogil=True)
+def calc_and(cc: int, stat: Vector, ct: Vector, fv: Vector) -> Vector:
+    p: Vector = np.zeros(cc, dtype=Float)
+    for ci in prange(cc):
+        # p[ci] = np.multiply.reduce(1 - stat[ci] / ct[ci] * (1 - fv))
+        p[ci] = np.prod(1 - stat[ci] / ct[ci] * (1 - fv))
+    return p
+
+@jit(nopython=True, nogil=True)
+def calc_or(cc: int, stat: Vector, ft: Vector, fv: Vector) -> Vector:
+    p: Vector = np.zeros(cc, dtype=Float)
+    for ci in prange(cc):
+        # p[ci] = np.frompyfunc(lambda x, y: (x + y) - (x * y), 2, 1).reduce(self.stat[ci] / self.ft * fv)
+        # p[ci] = 1 - np.multiply.reduce(1 - self.stat[ci] / self.ft * fv)
+        p[ci] = 1 - np.prod(1 - stat[ci] / ft * fv)
+    return p
 
 class LayerOr():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
@@ -16,11 +34,7 @@ class LayerOr():
         self.ft += fv
     
     def calc(self, fv: Vector) -> Vector:
-        p = np.zeros(self.cc, dtype=Float)
-        for ci in range(self.cc):
-            p[ci] = 1 - np.multiply.reduce(1 - self.stat[ci] / self.ft * fv)
-            # p[ci] = np.frompyfunc(lambda x, y: (x + y) - (x * y), 2, 1).reduce(self.stat[ci] / self.ft * fv)
-        return p
+        return calc_or(self.cc, self.stat, self.ft, fv)
     
 class LayerAnd():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
@@ -34,10 +48,7 @@ class LayerAnd():
         self.stat[ci] += fv
     
     def calc(self, fv: Vector) -> Vector:
-        p = np.zeros(self.cc, dtype=Float)
-        for ci in range(self.cc):
-            p[ci] = np.multiply.reduce(1 - self.stat[ci] / self.ct[ci] * (1 - fv))
-        return p
+        return calc_and(self.cc, self.stat, self.ct, fv)
     
 def compl(x):
     x = np.array(x, dtype=Float)
