@@ -19,6 +19,7 @@ class LayerOr():
         p = np.zeros(self.cc, dtype=Float)
         for ci in range(self.cc):
             p[ci] = 1 - np.multiply.reduce(1 - self.stat[ci] / self.ft * fv)
+            # p[ci] = np.frompyfunc(lambda x, y: (x + y) - (x * y), 2, 1).reduce(self.stat[ci] / self.ft * fv)
         return p
     
 class LayerAnd():
