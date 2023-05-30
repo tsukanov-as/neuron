@@ -19,8 +19,8 @@ print("MultinomialNB = {:.2f}%".format(accuracy_score(y_test, y_predicted)*100))
 import numpy as np
 from nn import LayerOr, LayerAnd
 
-x_train = x_train.astype(float) / 255
-x_test = x_test.astype(float) / 255
+x_train = x_train.astype(float) / 16
+x_test = x_test.astype(float) / 16
 
 lo = LayerOr(10, 8*8)
 for i, v in enumerate(x_train):
