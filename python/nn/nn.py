@@ -6,8 +6,6 @@ Vector = npt.NDArray[Float]
 
 class LayerOr():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
-        self.cc = classes_count
-        self.fc = features_count
         self.ft = np.full(features_count, tory, dtype=Float) # totals
         self.stat = np.zeros((classes_count, features_count), dtype=Float)
 
@@ -20,8 +18,6 @@ class LayerOr():
     
 class LayerAnd():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
-        self.cc = classes_count
-        self.fc = features_count
         self.ct = np.full((classes_count, 1), tory, dtype=Float) # totals
         self.stat = np.zeros((classes_count, features_count), dtype=Float)
 
