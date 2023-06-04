@@ -16,6 +16,10 @@ class LayerOr():
     def calc(self, fv: Vector) -> Vector:
         return 1 - np.prod(1 - self.stat / self.ft * fv, axis=1)
     
+    def test(self, tbl: Vector) -> Vector:
+        """ unexpectedly slow """
+        return np.argmax(1 - np.prod(1 - self.stat / self.ft * tbl[:, np.newaxis], axis=2), axis=1)
+
 class LayerAnd():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
         self.ct = np.full((classes_count, 1), tory, dtype=Float) # totals
@@ -28,6 +32,10 @@ class LayerAnd():
     def calc(self, fv: Vector) -> Vector:
         return np.prod(1 - self.stat / self.ct * (1 - fv), axis=1)
     
+    def test(self, tbl: Vector) -> Vector:
+        """ unexpectedly slow """
+        return np.argmax(np.prod(1 - self.stat / self.ct * (1 - tbl)[:, np.newaxis], axis=2), axis=1)
+
 def compl(x):
     x = np.array(x, dtype=Float)
     return np.append(x, 1-x)
