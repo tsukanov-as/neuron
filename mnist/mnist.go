@@ -70,8 +70,8 @@ func printImg(img []float64) {
 
 func argmax(x []float64) int {
 	j := 0
-	max := 0.0
-	for i := 0; i < len(x); i++ {
+	max := x[0]
+	for i := 1; i < len(x); i++ {
 		if x[i] > max {
 			max = x[i]
 			j = i

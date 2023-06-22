@@ -15,12 +15,10 @@ func and(a, b float64) float64 {
 	return a * b
 }
 
-// 1 neuron in modification `xor` and negative wire (or negative modification of neuron)
 func xnor(a, b float64) float64 {
 	return not(xor(a, b))
 }
 
-// 1 neuron in modification `xor`
 func xor(a, b float64) float64 {
-	return not(a)*b + a*not(b)
+	return or(not(a)*b, a*not(b))
 }

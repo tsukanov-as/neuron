@@ -2,6 +2,7 @@ package neuron
 
 import (
 	"errors"
+	"math"
 )
 
 type Classifier struct {
@@ -20,10 +21,23 @@ func New(classes, features int) *Classifier {
 		ft: make([]float64, features),
 		ct: make([]float64, classes),
 	}
-	for i := range c.ct {
-		c.ct[i] = 100 // experimental magic needed for Detect2
-	}
 	return c
+}
+
+func (c *Classifier) Init(cv float64, fv float64) error {
+	if fv > cv {
+		return errors.New("feature value must be less than or equal to class value")
+	}
+	for i := range c.ct {
+		c.ct[i] = cv
+	}
+	for i := range c.fs {
+		c.fs[i] = fv
+	}
+	for i := range c.ft {
+		c.ft[i] = fv
+	}
+	return nil
 }
 
 func (c *Classifier) Learn(class int, fv []float64) error {
@@ -67,7 +81,6 @@ func (c *Classifier) Learn2(class int, cv float64, fv []float64) error {
 	return nil
 }
 
-// analogue of naive Bayes classifier
 func (c *Classifier) Predict(fv []float64) ([]float64, error) {
 	p := make([]float64, c.cc)
 	for ci := 0; ci < c.cc; ci++ { // for each class
@@ -85,10 +98,8 @@ func (c *Classifier) Predict(fv []float64) ([]float64, error) {
 			if c.ft[fi] == 0 {
 				continue
 			}
-			fp := (cf[fi] / c.ft[fi]) // probability by feature (how many occur in this class / total); we can calculate this in advance, but it will take more memory (+classes*features*float64)
-			// fp := (cf[fi] / c.ft[fi]) * (cf[fi] / c.ct[ci]) // maybe so ...
-			fp = fp * fv[fi] // feature value limited by range 0 <= v <= 1, so we just reduce the probability proportionally
-			cp = or(cp, fp)
+			fp := cf[fi] / c.ft[fi]
+			cp = or(cp, and(fp, fv[fi]))
 		}
 		p[ci] = cp
 	}
@@ -141,11 +152,35 @@ func (c *Classifier) Detect2(fv []float64) ([]float64, error) {
 			if c.ct[ci] == 0 {
 				continue
 			}
-			fp := 1 - (cf[fi] / c.ct[ci])
-			fp = or(fp, fv[fi])
-			cp = and(cp, fp) // all must match
+			fp := cf[fi] / c.ct[ci]
+			cp = and(cp, xnor(fp, fv[fi]))
 		}
 		p[ci] = cp
+	}
+	return p, nil
+}
+
+func (c *Classifier) DetectRBF(fv []float64) ([]float64, error) {
+	p := make([]float64, c.cc)
+	for ci := 0; ci < c.cc; ci++ { // for each class
+		base := ci * c.fc
+		cf := c.fs[base : base+c.fc] // slice feature statistics by class
+		cp := 0.0                    // calculated class probability
+		fc := len(fv)
+		if fc > c.fc {
+			fc = c.fc
+		}
+		for fi := 0; fi < fc; fi++ { // for each feature
+			if fv[fi] < 0 || fv[fi] > 1 {
+				return nil, errors.New("feature value must be in range 0..1")
+			}
+			if c.ct[ci] == 0 {
+				continue
+			}
+			fp := cf[fi]/c.ct[ci] - fv[fi]
+			cp += fp * fp
+		}
+		p[ci] = -math.Sqrt(cp)
 	}
 	return p, nil
 }

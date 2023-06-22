@@ -13,6 +13,21 @@ def AND(x, y):
 def OR(x, y):
 	return (x + y) - (x * y)
 
+def OR2(x, y):
+	return NOT(AND(NOT(x), NOT(y)))
+
+def XOR(x, y):
+    return OR(AND(NOT(x), y), AND(x, NOT(y)))
+
+def XNOR(x, y):
+	return NOT(XOR(x, y))
+
+def XNOR2(x, y):
+	return AND(OR(NOT(x), y), OR(x, NOT(y)))
+
+def XNOR3(x, y):
+	return AND(OR2(NOT(x), y), OR2(x, NOT(y)))
+
 class LayerOr():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
         self.cc = classes_count
@@ -52,14 +67,10 @@ class LayerAnd():
             cp = 1
             cf = self.stat[ci]
             for fi in range(self.fc):
-                fp = OR(NOT(cf[fi] / self.ct[ci]), fv[fi])
+                fp = XNOR(cf[fi] / self.ct[ci], fv[fi])
                 cp = AND(cp, fp)
             p[ci] = cp
         return p
-    
-def compl(x):
-    x = np.array(x, dtype=Float)
-    return np.append(x, NOT(x))
 
 if __name__ == "__main__":
     np.set_printoptions(precision=3, suppress=True)
@@ -82,12 +93,12 @@ if __name__ == "__main__":
     for r in x:
         c0.feed(r[0], r[1])
 
-    p = c0.calc(np.array([0.0, 1.0, 1.0]))
+    p = c0.calc([0.0, 1.0, 1.0])
     print(p.argmax(), p)
 
-    c1 = LayerAnd(2, 3*2)
+    c1 = LayerAnd(2, 3)
     for r in x:
-        c1.feed(r[0], compl(r[1]))
+        c1.feed(r[0], r[1])
 
-    p = c1.calc(compl([0.0, 1.0, 1.0]))
+    p = c1.calc([0.0, 1.0, 1.0])
     print(p.argmax(), p)

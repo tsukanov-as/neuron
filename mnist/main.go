@@ -18,6 +18,8 @@ func main() {
 	Mnist2LayersAND()
 	fmt.Println("3 layers (sensor -> fixed and -> or):")
 	Mnist3Layers()
+	fmt.Println("2 layers (sensor -> rbf):")
+	Mnist2LayersRBF()
 	fmt.Println("3 layers (sensor -> adaptive and -> or):")
 	fmt.Printf("wait a few minutes...\n\n")
 	Mnist3Layers2()
@@ -62,7 +64,7 @@ func Mnist2LayersOR() {
 }
 
 func Mnist2LayersAND() {
-	c := neuron.New(10, mnistImgLen*2)
+	c := neuron.New(10, mnistImgLen)
 
 	// Один просмотр тренировочной выборки.
 
@@ -71,7 +73,7 @@ func Mnist2LayersAND() {
 		log.Fatal(err)
 	}
 	for _, r := range train {
-		err = c.Learn(int(r[0]), complemented(r[1:]))
+		err = c.Learn(int(r[0]), r[1:])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,7 +89,7 @@ func Mnist2LayersAND() {
 	total := 0.0
 
 	for _, r := range test {
-		p, err := c.Detect2(complemented(r[1:]))
+		p, err := c.Detect2(r[1:])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -175,6 +177,44 @@ func Mnist3Layers() {
 	fmt.Println(total / float64(len(test)))
 }
 
+func Mnist2LayersRBF() {
+	c := neuron.New(10, mnistImgLen)
+
+	// Один просмотр тренировочной выборки.
+
+	train, err := readMnistCsv("mnist_train.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, r := range train {
+		err = c.Learn(int(r[0]), r[1:])
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Проверка на тестовой выборке.
+
+	test, err := readMnistCsv("mnist_test.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	total := 0.0
+
+	for _, r := range test {
+		p, err := c.DetectRBF(r[1:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		if int(r[0]) == argmax(p) {
+			total += 1
+		}
+	}
+
+	fmt.Println(total / float64(len(test)))
+}
+
 // experimental
 func Mnist3Layers2() {
 	const N = 10000 // размеры тренировочной и тестовой выборок
@@ -189,26 +229,26 @@ func Mnist3Layers2() {
 		rand.Seed(time.Now().UnixNano())
 
 		dl := []*neuron.Classifier{
-			neuron.New(10, mnistImgLen*2),
-			neuron.New(10, mnistImgLen*2),
-			neuron.New(10, mnistImgLen*2),
-			neuron.New(10, mnistImgLen*2),
-			neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
-			// neuron.New(10, mnistImgLen*2),
+			neuron.New(10, mnistImgLen),
+			neuron.New(10, mnistImgLen),
+			neuron.New(10, mnistImgLen),
+			neuron.New(10, mnistImgLen),
+			neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
+			// neuron.New(10, mnistImgLen),
 		}
 
 		train, err := readMnistCsv("mnist_train.csv")
@@ -219,8 +259,9 @@ func Mnist3Layers2() {
 
 		// Рандом для AND нейронов
 
-		vv := make([]float64, mnistImgLen*2)
+		vv := make([]float64, mnistImgLen)
 		for _, d := range dl {
+			d.Init(50, 0)
 			for i := 0; i < 10; i++ {
 				for j := range vv {
 					vv[j] = rand.Float64()
@@ -235,9 +276,10 @@ func Mnist3Layers2() {
 		// Проходы по AND нейронам (по сути наивная кластеризация)
 
 		st := make([]int, len(dl))
-		for i := 0; i < 200; i++ {
+		for i := 0; i < 100; i++ {
+			println(i)
 			for _, r := range train {
-				fv := complemented(r[1:])
+				fv := r[1:]
 				mx := 0.0
 				mi := 0
 				for di := range dl {
@@ -265,7 +307,7 @@ func Mnist3Layers2() {
 		c := neuron.New(10, 10*len(dl))
 
 		for _, r := range train {
-			fv := complemented(r[1:])
+			fv := r[1:]
 			pp := make([]float64, 0, 10*len(dl))
 			for _, d := range dl {
 				pd, err := d.Detect2(fv)
@@ -294,7 +336,7 @@ func Mnist3Layers2() {
 		isMax := false
 
 		for _, r := range test {
-			fv := complemented(r[1:])
+			fv := r[1:]
 			pp := make([]float64, 0, 10*len(dl))
 			for _, d := range dl {
 				pd, err := d.Detect2(fv)
@@ -322,7 +364,7 @@ func Mnist3Layers2() {
 		total2 := 0.0
 
 		for _, r := range train {
-			fv := complemented(r[1:])
+			fv := r[1:]
 			pp := make([]float64, 0, 10*len(dl))
 			for _, d := range dl {
 				pd, err := d.Detect2(fv)

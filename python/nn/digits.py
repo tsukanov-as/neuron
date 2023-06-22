@@ -34,10 +34,7 @@ for i, v in enumerate(x_test):
 
 print("LayerOr = {:.2f}%".format(total / len(x_test) * 100))
 
-x_train = np.append(x_train, 1 - x_train, axis=1)
-x_test = np.append(x_test, 1 - x_test, axis=1)
-
-la = LayerAnd(10, 8*8*2)
+la = LayerAnd(10, 8*8)
 for i, v in enumerate(x_train):
     la.feed(y_train[i], v)
 
