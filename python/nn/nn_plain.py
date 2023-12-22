@@ -11,7 +11,10 @@ def AND(x, y):
 	return x * y
 
 def OR(x, y):
-	return (x + y) - (x * y)
+	return NOT(AND(NOT(x), NOT(y)))
+
+def IMPLY(x, y):
+	return OR(NOT(x), y)
 
 class LayerOr():
     def __init__(self, classes_count: int, features_count: int, tory: float = 0.0001):
@@ -23,7 +26,7 @@ class LayerOr():
     def feed(self, ci: int, fv: Vector):
         self.stat[ci] += fv
         self.ft += fv
-    
+
     def calc(self, fv: Vector) -> Vector:
         p = np.zeros(self.cc, dtype=Float)
         for ci in range(self.cc):
@@ -45,18 +48,18 @@ class LayerAnd():
     def feed(self, ci: int, fv: Vector):
         self.ct[ci] += 1
         self.stat[ci] += fv
-      
+
     def calc(self, fv: Vector) -> Vector:
         p = np.zeros(self.cc, dtype=Float)
         for ci in range(self.cc):
             cp = 1
             cf = self.stat[ci]
             for fi in range(self.fc):
-                fp = OR(NOT(cf[fi] / self.ct[ci]), fv[fi])
+                fp = IMPLY(cf[fi] / self.ct[ci], fv[fi])
                 cp = AND(cp, fp)
             p[ci] = cp
         return p
-    
+
 def compl(x):
     x = np.array(x, dtype=Float)
     return np.append(x, NOT(x))

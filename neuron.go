@@ -141,8 +141,8 @@ func (c *Classifier) Detect2(fv []float64) ([]float64, error) {
 			if c.ct[ci] == 0 {
 				continue
 			}
-			fp := 1 - (cf[fi] / c.ct[ci])
-			fp = or(fp, fv[fi])
+			fp := (cf[fi] / c.ct[ci])
+			fp = imply(fp, fv[fi])
 			cp = and(cp, fp) // all must match
 		}
 		p[ci] = cp

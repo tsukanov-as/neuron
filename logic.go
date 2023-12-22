@@ -24,3 +24,7 @@ func xnor(a, b float64) float64 {
 func xor(a, b float64) float64 {
 	return not(a)*b + a*not(b)
 }
+
+func imply(a, b float64) float64 {
+	return or(not(a), b)
+}
