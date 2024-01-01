@@ -37,6 +37,21 @@ for i, v in enumerate(x_test):
 
 print("LayerOr = {:.2f}%".format(total / len(x_test) * 100))
 
+# tune Or
+for epoch in range(100):
+    for i, v in enumerate(x_train):
+        p = lo.calc(v)
+        if p.argmax() != y_train[i]:
+            lo.feed(y_train[i], v)
+
+    total = 0
+    for i, v in enumerate(x_test):
+        p = lo.calc(v)
+        if p.argmax() == y_test[i]:
+            total += 1
+
+print("LayerOr tuned = {:.2f}%".format(total / len(x_test) * 100))
+
 x_train = np.append(x_train, 1 - x_train, axis=1)
 x_test = np.append(x_test, 1 - x_test, axis=1)
 
