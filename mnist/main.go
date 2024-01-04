@@ -59,6 +59,33 @@ func Mnist2LayersOR() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+
+	// tune
+	for epoch := 0; epoch < 50; epoch++ {
+		for _, r := range train {
+			p, err := c.Predict(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = c.Learn(int(r[0]), r[1:])
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		total := 0.0
+		for _, r := range test {
+			p, err := c.Predict(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+	}
 }
 
 func Mnist2LayersAND() {
@@ -173,6 +200,39 @@ func Mnist3Layers() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+
+	// tune
+	for epoch := 0; epoch < 50; epoch++ {
+		for _, r := range train {
+			src := r[1:]
+			var farr [featuresCount]float64
+			fvec := detect(L1Chans[:], src, farr[0:0])
+			p, err := L2.Predict(fvec)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = L2.Learn(int(r[0]), fvec)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		total := 0.0
+		for _, r := range test {
+			src := r[1:]
+			var farr [featuresCount]float64
+			fvec := detect(L1Chans[:], src, farr[0:0])
+			p, err := L2.Predict(fvec)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+	}
 }
 
 // experimental
