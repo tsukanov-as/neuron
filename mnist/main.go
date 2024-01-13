@@ -63,6 +63,43 @@ func Mnist2LayersOR() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+
+	// tune
+	for epoch := 0; epoch < 100; epoch++ {
+		for _, r := range train {
+			p, err := c.Predict(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = c.Learn(int(r[0]), r[1:])
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		total_train := 0.0
+		for _, r := range train {
+			p, err := c.Predict(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total_train += 1
+			}
+		}
+		total_test := 0.0
+		for _, r := range test {
+			p, err := c.Predict(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total_test += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on train: %f, on test: %f\n", epoch+1, total_train/float64(len(train)), total_test/float64(len(test)))
+	}
 }
 
 func Mnist2LayersAND() {
@@ -155,29 +192,27 @@ func Mnist2LayersBayes() {
 				}
 			}
 		}
-		total := 0.0
+		total_train := 0.0
 		for _, r := range train {
 			p, err := c.Detect3(r[1:])
 			if err != nil {
 				log.Fatal(err)
 			}
 			if int(r[0]) == argmax(p) {
-				total += 1
+				total_train += 1
 			}
 		}
-		fmt.Printf("tune [epoch %d] accuracy on train: %f\n", epoch+1, total/float64(len(train)))
-
-		total = 0.0
+		total_test := 0.0
 		for _, r := range test {
 			p, err := c.Detect3(r[1:])
 			if err != nil {
 				log.Fatal(err)
 			}
 			if int(r[0]) == argmax(p) {
-				total += 1
+				total_test += 1
 			}
 		}
-		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+		fmt.Printf("tune [epoch %d] accuracy on train: %f, on test: %f\n", epoch+1, total_train/float64(len(train)), total_test/float64(len(test)))
 	}
 }
 
@@ -308,17 +343,27 @@ func Mnist2LayersRBF() {
 				}
 			}
 		}
-		total := 0.0
+		total_train := 0.0
+		for _, r := range train {
+			p, err := c.DetectRBF(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total_train += 1
+			}
+		}
+		total_test := 0.0
 		for _, r := range test {
 			p, err := c.DetectRBF(r[1:])
 			if err != nil {
 				log.Fatal(err)
 			}
 			if int(r[0]) == argmax(p) {
-				total += 1
+				total_test += 1
 			}
 		}
-		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+		fmt.Printf("tune [epoch %d] accuracy on train: %f, on test: %f\n", epoch+1, total_train/float64(len(train)), total_test/float64(len(test)))
 	}
 }
 
