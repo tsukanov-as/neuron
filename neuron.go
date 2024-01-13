@@ -6,20 +6,23 @@ import (
 )
 
 type Classifier struct {
-	cc int       // classes count
-	fc int       // features count
-	fs []float64 // feature statistics by class
-	ft []float64 // features total
-	ct []float64 // classes total
+	cc  int       // classes count
+	fc  int       // features count
+	fs  []float64 // feature statistics by class
+	ft  []float64 // features total
+	ftt []float64 // features total
+	ct  []float64 // classes total
+	tc  float64
 }
 
 func New(classes, features int) *Classifier {
 	c := &Classifier{
-		cc: classes,
-		fc: features,
-		fs: make([]float64, classes*features),
-		ft: make([]float64, features),
-		ct: make([]float64, classes),
+		cc:  classes,
+		fc:  features,
+		fs:  make([]float64, classes*features),
+		ft:  make([]float64, features),
+		ftt: make([]float64, classes),
+		ct:  make([]float64, classes),
 	}
 	return c
 }
@@ -37,6 +40,9 @@ func (c *Classifier) Init(cv float64, fv float64) error {
 	for i := range c.ft {
 		c.ft[i] = fv
 	}
+	for i := range c.ftt {
+		c.ftt[i] = fv
+	}
 	return nil
 }
 
@@ -44,6 +50,7 @@ func (c *Classifier) Learn(class int, fv []float64) error {
 	if class < 0 || class >= c.cc {
 		return errors.New("unknown class")
 	}
+	c.tc += 1
 	c.ct[class] += 1
 	base := class * c.fc
 	fc := len(fv)
@@ -56,6 +63,7 @@ func (c *Classifier) Learn(class int, fv []float64) error {
 		}
 		c.fs[base+fi] += fv[fi]
 		c.ft[fi] += fv[fi]
+		c.ftt[class] += fv[fi]
 	}
 	return nil
 }
@@ -65,6 +73,7 @@ func (c *Classifier) Learn2(class int, cv float64, fv []float64) error {
 	if class < 0 || class >= c.cc {
 		return errors.New("unknown class")
 	}
+	c.tc += cv
 	c.ct[class] += cv
 	base := class * c.fc
 	fc := len(fv)
@@ -183,6 +192,24 @@ func (c *Classifier) DetectRBF(fv []float64) ([]float64, error) {
 		p[ci] = -math.Sqrt(cp)
 	}
 	return p, nil
+}
+
+func (c *Classifier) Detect3(fv []float64) ([]float64, error) {
+	score := make([]float64, c.cc)
+	for ci := 0; ci < c.cc; ci++ { // for each class
+		base := ci * c.fc
+		cf := c.fs[base : base+c.fc] // slice feature statistics by class
+		cv := 0.0                    // calculated class value
+		fc := len(fv)
+		if fc > c.fc {
+			fc = c.fc
+		}
+		for fi := 0; fi < fc; fi++ { // for each feature
+			cv += (math.Log(cf[fi]) - math.Log(c.ftt[ci])) * fv[fi]
+		}
+		score[ci] = cv + math.Log(c.ct[ci]/c.tc)
+	}
+	return score, nil
 }
 
 func (c *Classifier) ClassProbs(class int) ([]float64, error) {

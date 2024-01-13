@@ -16,6 +16,8 @@ func main() {
 	Mnist2LayersOR()
 	fmt.Println("2 layers (sensor -> and):")
 	Mnist2LayersAND()
+	fmt.Println("2 layers (bayes):")
+	Mnist2LayersBayes()
 	fmt.Println("3 layers (sensor -> fixed and -> or):")
 	Mnist3Layers()
 	fmt.Println("2 layers (sensor -> rbf):")
@@ -99,6 +101,84 @@ func Mnist2LayersAND() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+}
+
+func Mnist2LayersBayes() {
+	c := neuron.New(10, mnistImgLen)
+	c.Init(1, 1)
+
+	// Один просмотр тренировочной выборки.
+
+	train, err := readMnistCsv("mnist_train.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, r := range train {
+		err = c.Learn(int(r[0]), r[1:])
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Проверка на тестовой выборке.
+
+	test, err := readMnistCsv("mnist_test.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	total := 0.0
+
+	for _, r := range test {
+		p, err := c.Detect3(r[1:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		if int(r[0]) == argmax(p) {
+			total += 1
+		}
+	}
+
+	fmt.Println(total / float64(len(test)))
+
+	// tune
+	for epoch := 0; epoch < 100; epoch++ {
+		for _, r := range train {
+			p, err := c.Detect3(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = c.Learn(int(r[0]), r[1:])
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		total := 0.0
+		for _, r := range train {
+			p, err := c.Detect3(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on train: %f\n", epoch+1, total/float64(len(train)))
+
+		total = 0.0
+		for _, r := range test {
+			p, err := c.Detect3(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+	}
 }
 
 func Mnist3Layers() {
