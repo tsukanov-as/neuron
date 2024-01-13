@@ -219,6 +219,31 @@ func (c *Classifier) DetectRBF2(fv []float64) ([]float64, error) {
 	return p, nil
 }
 
+func (c *Classifier) DetectRBF3(fv []float64) ([]float64, error) {
+	p := make([]float64, c.cc)
+	for ci := 0; ci < c.cc; ci++ { // for each class
+		base := ci * c.fc
+		cf := c.fs[base : base+c.fc] // slice feature statistics by class
+		cp := 1.0                    // calculated class probability
+		fc := len(fv)
+		if fc > c.fc {
+			fc = c.fc
+		}
+		for fi := 0; fi < fc; fi++ { // for each feature
+			if fv[fi] < 0 || fv[fi] > 1 {
+				return nil, errors.New("feature value must be in range 0..1")
+			}
+			if c.ct[ci] == 0 {
+				continue
+			}
+			fp := cf[fi]/c.ct[ci] - fv[fi]
+			cp *= 1 - fp*fp
+		}
+		p[ci] = cp
+	}
+	return p, nil
+}
+
 func (c *Classifier) Detect3(fv []float64) ([]float64, error) {
 	score := make([]float64, c.cc)
 	for ci := 0; ci < c.cc; ci++ { // for each class
