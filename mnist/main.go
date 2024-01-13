@@ -108,7 +108,7 @@ func Mnist3Layers() {
 	}
 
 	createChan := func(d [][]float64) *neuron.Classifier {
-		c := neuron.New(2, 8)
+		c := neuron.New(2, 4)
 		for cl, r := range d {
 			err := c.Learn(cl, r)
 			if err != nil {
@@ -122,16 +122,16 @@ func Mnist3Layers() {
 	// Исходные пиксели при этом продублированы в инвертированном варианте (нейрон NOT).
 	L1Chans := [3]*neuron.Classifier{
 		createChan([][]float64{
-			complemented([]float64{0, 1, 1, 0}),
-			complemented([]float64{1, 0, 0, 1}),
+			([]float64{0, 1, 1, 0}),
+			([]float64{1, 0, 0, 1}),
 		}),
 		createChan([][]float64{
-			complemented([]float64{1, 1, 0, 0}),
-			complemented([]float64{0, 0, 1, 1}),
+			([]float64{1, 1, 0, 0}),
+			([]float64{0, 0, 1, 1}),
 		}),
 		createChan([][]float64{
-			complemented([]float64{1, 0, 1, 0}),
-			complemented([]float64{0, 1, 0, 1}),
+			([]float64{1, 0, 1, 0}),
+			([]float64{0, 1, 0, 1}),
 		}),
 	}
 
@@ -213,6 +213,33 @@ func Mnist2LayersRBF() {
 	}
 
 	fmt.Println(total / float64(len(test)))
+
+	// tune
+	for epoch := 0; epoch < 100; epoch++ {
+		for _, r := range train {
+			p, err := c.DetectRBF(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = c.Learn(int(r[0]), r[1:])
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		total := 0.0
+		for _, r := range test {
+			p, err := c.DetectRBF(r[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on test: %f\n", epoch+1, total/float64(len(test)))
+	}
 }
 
 // experimental
@@ -401,7 +428,7 @@ func detect(L1Chans []*neuron.Classifier, src, dst []float64) []float64 {
 			v[2] = src[(y+1)*28+(x+0)]
 			v[3] = src[(y+1)*28+(x+1)]
 			for _, ch := range L1Chans {
-				p, err := ch.Detect(complemented(v[:]))
+				p, err := ch.Detect2(v[:])
 				if err != nil {
 					log.Fatal(err)
 				}
