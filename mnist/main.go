@@ -255,41 +255,56 @@ func Mnist3Layers() {
 	// Слой ассоциаторов `OR` поверх детекторов.
 	L2 := neuron.New(10, featuresCount)
 
-	// Один просмотр тренировочной выборки.
-
-	for _, r := range train {
-		src := r[1:]
-		var farr [featuresCount]float64 // попытка удержать вектор на стеке
-		fvec := detect(L1Chans[:], src, farr[0:0])
-		err = L2.Learn(int(r[0]), fvec)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// Проверка на тестовой выборке.
-
 	test, err := readMnistCsv("mnist_test.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	total := 0.0
-
-	for _, r := range test {
-		src := r[1:]
-		var farr [featuresCount]float64 // попытка удержать вектор на стеке
-		fvec := detect(L1Chans[:], src, farr[0:0])
-		p, err := L2.Predict(fvec)
-		if err != nil {
-			log.Fatal(err)
+	// tune
+	for epoch := 0; epoch < 50; epoch++ {
+		for _, r := range train {
+			src := r[1:]
+			var farr [featuresCount]float64
+			fvec := detect(L1Chans[:], src, farr[0:0])
+			p, err := L2.Predict(fvec)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) != argmax(p) {
+				err = L2.Learn(int(r[0]), fvec)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
-		if int(r[0]) == argmax(p) {
-			total += 1
+		total_train := 0.0
+		for _, r := range train {
+			src := r[1:]
+			var farr [featuresCount]float64
+			fvec := detect(L1Chans[:], src, farr[0:0])
+			p, err := L2.Predict(fvec)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total_train += 1
+			}
 		}
+		total_test := 0.0
+		for _, r := range test {
+			src := r[1:]
+			var farr [featuresCount]float64
+			fvec := detect(L1Chans[:], src, farr[0:0])
+			p, err := L2.Predict(fvec)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if int(r[0]) == argmax(p) {
+				total_test += 1
+			}
+		}
+		fmt.Printf("tune [epoch %d] accuracy on train: %f, on test: %f\n", epoch+1, total_train/float64(len(train)), total_test/float64(len(test)))
 	}
-
-	fmt.Println(total / float64(len(test)))
 }
 
 func Mnist2LayersRBF() {
